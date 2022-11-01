@@ -1,6 +1,6 @@
 from app import db
 from app.models.book import Book 
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, jsonify, make_response, request, abort
 
 # class Book:
 #     def __init__(self, id, title, description): 
@@ -10,6 +10,21 @@ from flask import Blueprint, jsonify, make_response, request
 
 books_bp = Blueprint("books", __name__, url_prefix="/books")
 
+#helper functions
+def validate_book(book_id):
+    try:
+        book_id = int(book_id)
+    except:
+        abort(make_response({"message":f"book {book_id} invalid"}, 400))
+
+    book = Book.query.get(book_id) 
+
+    if not book:
+        abort(make_response({"message":f"book {book_id} not found"}, 404))
+
+    return book
+
+# route functions 
 @books_bp.route("", methods= ["GET"])
 def read_all_books(): 
     books = Book.query.all() 
@@ -23,7 +38,7 @@ def read_all_books():
     return jsonify(books_response)
 
 @books_bp.route("", methods= ["POST"])
-def create_books(): 
+def create_book(): 
     request_body = request.get_json() 
     new_book = Book(
         title=request_body["title"],
@@ -36,6 +51,41 @@ def create_books():
         f"Book {new_book.title} created",201
     )
 
+@books_bp.route("/<book_id>", methods=["GET"])
+def read_one_book(book_id): 
+    book = validate_book(book_id)
+    
+
+    return {
+        "id": book.id,
+        "title": book.title,
+        "description": book.description,
+    }
+
+@books_bp.route("/<book_id>", methods=["PUT"])
+def update_book(book_id): 
+    book = validate_book(book_id)
+
+    request_body = request.get_json()
+    
+    book.title = request_body["title"]
+    book.description = request_body["description"]
+
+    db.session.commit() 
+
+    return make_response(f"Book #{book_id} successfully updated")
+
+@books_bp.route("/<book_id>", methods=["DELETE"])
+def delete_book(book_id):
+    book = validate_book(book_id)
+
+    db.session.delete(book)
+    db.session.commit() 
+
+    return make_response(f"Book #{book_id} successfully deleted")
+
+
+
 
 
 # books = [
@@ -43,20 +93,6 @@ def create_books():
 #     Books(2, "Twilight", "A tale of romance centering an emo vegan vampire who falls in love with a human and tries not to eat her"),
 #     Books(3, "Oh the Places You'll Go!","A book about adventure, travel, and the many wonderful places that exist in the universe"),
 # ]
-
-
-# def validate_book(book_id):
-#     try:
-#         book_id = int(book_id)
-#     except:
-#         abort(make_response({"message":f"book {book_id} invalid"}, 400))
-
-#     for book in BOOKS:
-#         if book.id == book_id:
-#             return book
-
-#     abort(make_response({"message":f"book {book_id} not found"}, 404))
-
 
 
 # @books_bp.route("", methods = ["GET"])
@@ -69,21 +105,3 @@ def create_books():
 #             "description": book.description,
 #             })
 #     return jsonify(books_response)
-
-
-
-# @books_bp.route("/<book_id>", methods=["GET"])
-# def handle_book(book_id):
-#     book = validate_book(book_id)
-
-#     return {
-#         "id": book.id,
-#         "title": book.title,
-#         "description": book.description,
-#     }
-
-
-
-
-
-
