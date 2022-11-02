@@ -27,8 +27,16 @@ def validate_book(book_id):
 # route functions 
 @books_bp.route("", methods= ["GET"])
 def read_all_books(): 
-    books = Book.query.all() 
     books_response = [] 
+
+    title_query = request.args.get("title")
+
+    if title_query: 
+        books = Book.query.filter_by(title=title_query) 
+    else:
+        books = Book.query.all() 
+
+
     for book in books: 
         books_response.append({
             "id": book.id, 
@@ -83,25 +91,4 @@ def delete_book(book_id):
     db.session.commit() 
 
     return make_response(f"Book #{book_id} successfully deleted")
-
-
-
-
-
-# books = [
-#     Books(1, "Harry Potter", "a fairytale of sneaky witches, wizards and all matter of magical creatures that unite to defeat an evil magical overlord"), 
-#     Books(2, "Twilight", "A tale of romance centering an emo vegan vampire who falls in love with a human and tries not to eat her"),
-#     Books(3, "Oh the Places You'll Go!","A book about adventure, travel, and the many wonderful places that exist in the universe"),
-# ]
-
-
-# @books_bp.route("", methods = ["GET"])
-# def get_all_books():
-#     books_response = [] 
-#     for book in BOOKS: 
-#         books_response.append({
-#             "id": book.id, 
-#             "title": book.title,
-#             "description": book.description,
-#             })
-#     return jsonify(books_response)
+    
