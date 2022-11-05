@@ -9,6 +9,7 @@ from app.models.book import Book
 def app():
     app = create_app({"TESTING": True})
 
+    # Hack to make sure DB stays up to date 
     @request_finished.connect_via(app)
     def expire_session(sender, response, **extra):
         db.session.remove()
